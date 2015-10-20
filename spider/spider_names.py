@@ -1,66 +1,41 @@
 # -*- coding: utf-8 -*-
+"""
+Run with scapy crawl vornamen
+"""
 
 import scrapy
 from scrapy import signals
 from scrapy.xlib.pydispatch import dispatcher
 
 class DmozSpider(scrapy.Spider):
-    name = "dmoz"
-    allowed_domains = ["dmoz.org"]
-        
+    name = "vornamen"
+
     start_urls = ["http://www.beliebte-vornamen.de/jahrgang/j" + str(i) for i in range(1890, 2015)]
-    global years_with_names
     years_with_names = {}
 
     def __init__(self):
-      dispatcher.connect(self.spider_closed, signals.spider_closed)
-    
-    def getNameDict(self, name, pos, sex, year):
-      o = {}
-      o['sex'] = sex
-      o['name'] = name
-      prob = 1
-      if pos <= 10:
-        prob = 1.5 + (10 - pos) * 0.1 ##2,5% bis 1,5% top 10... danach 1% pro eintrag
-        
-      if year <= 1980:
-        prob = prob * (year - 1889) 
-      else:
-        prob = prob * (2015 - year)
-        
-      o['prob'] = prob
-      return o
-      
+        dispatcher.connect(self.spider_closed, signals.spider_closed)
+
     def parse(self, response):
-      year = response.url.split("/")[-1][-4:]
+        year = int(response.url.split("/")[-1][-4:])
 
-      names = []
 
-      i = 0
-      for h in response.xpath('//ol[1]/li/a/text()').extract():
-        o = self.getNameDict(h, i, 'female', int(year))
-        names.append(o)
-        i = i + 1
-      
-      i = 0
-      for h in response.xpath('//ol[2]/li/a/text()').extract():
-        o = self.getNameDict(h, i, 'male', int(year))
-        names.append(o)
-        i = i + 1
+        names = []
 
-      years_with_names[year] = names
-      
-        #filename = response.url.split("/")[-2] + '.html'
-        #with open(filename, 'wb') as f:
-        #    f.write(response.body)
-        
+        for pos, name in enumerate(response.xpath('//ol[1]/li/a/text()').extract()):
+            names.append((name, pos, "female"))
+
+        for pos, name in enumerate(response.xpath('//ol[2]/li/a/text()').extract()):
+            names.append((name, pos, "male"))
+
+        self.years_with_names[year] = names
+
     def spider_closed(self, spider):
-      f = open('names_with_year_prob.csv.new','w')
-      f.write('name;prob_fac;sex;year\n') # python will convert \n to os.linesep
-      for year in years_with_names:
-        for o in years_with_names[year]:
-          f.write(o['name'].encode('utf8') + ';' + str(o['prob']) +';' + o['sex'] +';' + year + '\n') # python will convert \n to os.linesep
-          print o['name']
-          #f.write(o)
-      
-      f.close()
+        ofname = 'names_with_year_prob.csv.new'
+        with open(ofname,'w') as of:
+            of.write('name;position;sex;year\n') # python will convert \n to os.linesep
+            for year in self.years_with_names:
+                for (name, pos, sex) in self.years_with_names[year]:
+                    of.write("{};{};{};{}\n".format(name.encode("utf-8"), pos, sex, year))
+                    print name
+            print "Written to", ofname
