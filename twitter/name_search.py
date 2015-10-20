@@ -12,7 +12,7 @@ class NameSearch(object):
                     }
 
                 try:
-                    o['position'] = int(row[1])
+                    o['prob'] = float(row[1])
                 except ValueError as e:
                     print "Failed to parse probability: {}".format(e)
 
@@ -49,4 +49,4 @@ class NameSearch(object):
 
     def search(self, name):
         res = (i for i in self.names if name in i["name"])
-        return sorted(res, key=self.demography_weight)
+        return sorted(res, key=lambda i: i.get("prob", 0))

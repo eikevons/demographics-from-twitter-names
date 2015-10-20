@@ -19,7 +19,6 @@ class DmozSpider(scrapy.Spider):
     def parse(self, response):
         year = int(response.url.split("/")[-1][-4:])
 
-
         names = []
 
         for pos, name in enumerate(response.xpath('//ol[1]/li/a/text()').extract()):
@@ -37,5 +36,5 @@ class DmozSpider(scrapy.Spider):
             for year in self.years_with_names:
                 for (name, pos, sex) in self.years_with_names[year]:
                     of.write("{};{};{};{}\n".format(name.encode("utf-8"), pos, sex, year))
-                    print name
+                    print name, pos, sex
             print "Written to", ofname

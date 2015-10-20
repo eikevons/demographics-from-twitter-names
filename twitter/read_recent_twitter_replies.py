@@ -21,5 +21,8 @@ class TwitterNotifications(NameSearch):
 
 if __name__ == "__main__":
     tn = TwitterNotifications(sys.argv[1], config.con_secret, config.con_secret_key, config.token_key, config.token)
-    for name, prob in tn.get_twitter_names():
-        print "{}: {}".format(name, prob)
+    with open('demographics_replies.csv', 'w') as of:
+        of.write('name;sex;age\n')
+        for name, o in tn.get_twitter_names():
+            of.write(o['name'] + ';' + o['sex'] +';' + str( 2015 - o['year']) + '\n')
+            print "{}: {}".format(name, o)
